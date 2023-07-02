@@ -72,6 +72,7 @@ while True:
 			cv2.circle(frame, (int(x), int(y)), int(radius),
 				(0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
+			print(center)
 	# update the points queue
 	pts.appendleft(center)
 	# loop over the set of tracked points
