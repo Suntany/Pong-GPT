@@ -3,7 +3,7 @@
 # 콜렉션 모듈에서 deque라는 데이터 처리 함수
 from collections import deque
 
-#
+# imutils 비디오스트림 모듈 임포트
 from imutils.video import VideoStream
 
 # numpy 모듈 임포트
@@ -22,29 +22,27 @@ import imutils
 import time
 
 # construct the argument parse and parse the arguments
-
 # parser를 만든다 이름은 ap
 ap = argparse.ArgumentParser()
-
 # add_argument 메서드로 받아들일 인수를 추가해나간다
 # -v 로 비디오 파일을 선택해서 재생할 수 있다.
 ap.add_argument("-v", "--video", help="path to the (optional) video file")
-
 # -b 로 최대 버퍼 사이즈를 지정할 수 있다 기본은 64
 ap.add_argument("-b", "--buffer", type=int, default=64, help="max buffer size")
-
 args = vars(ap.parse_args())
 
 # define the lower and upper boundaries of the "Orange"
 # ball in the HSV color space, then initialize the
 # list of tracked points
+# @@@오랜지 Hsv 색 범위 지정@@@
 orangeLower = (4, 150, 172)
 orangeUpper = (24, 255, 255)
 pts = deque(maxlen=args["buffer"])
 # if a video path was not supplied, grab the reference
 # to the webcam
 if not args.get("video", False):
-    vs = VideoStream(src=1).start()
+    # @@@비디오 장치 지정@@@
+    vs = VideoStream(src=0).start()
 # otherwise, grab a reference to the video file
 else:
     vs = cv2.VideoCapture(args["video"])
