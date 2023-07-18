@@ -35,7 +35,7 @@ args = vars(ap.parse_args())
 # ball in the HSV color space, then initialize the
 # list of tracked points
 # @@@오랜지 Hsv 색 범위 지정@@@
-orangeLower = (4, 150, 172)
+orangeLower = (4, 150, 100)
 orangeUpper = (24, 255, 255)
 pts = deque(maxlen=args["buffer"])
 # if a video path was not supplied, grab the reference
@@ -61,7 +61,8 @@ while True:
         break
     # resize the frame, blur it, and convert it to the HSV
     # color space
-    frame = imutils.resize(frame, width=600)
+    # (2705x1525)
+    frame = imutils.resize(frame, height=1525)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     # construct a mask for the color "orange", then perform
@@ -90,7 +91,17 @@ while True:
             # then update the list of tracked points
             cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
-            print(center)
+
+            # line1
+            if center[0] > 200 and center[0] < 250:
+                print("line1 detect")
+                print(center)
+
+            # line2
+            if center[0] > 750 and center[0] < 800:
+                print("line2 detect")
+                print(center)
+
     # update the points queue
     pts.appendleft(center)
     # loop over the set of tracked points
@@ -105,6 +116,7 @@ while True:
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
     # show the frame to our screen
     cv2.imshow("Frame", frame)
+
     key = cv2.waitKey(1) & 0xFF
     # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
