@@ -21,6 +21,17 @@ import imutils
 # time 모듈 임포트
 import time
 
+##### CHANGABLE VARIABLES #####
+CHECK_RANGE = 200
+LINE1_XY = None
+LINE2_XY = None
+LINE1_TOGGLE = False
+LINE2_TOGGLE = False
+ball_isout = True
+line_ison = False
+FINAL_XY = None
+
+
 # construct the argument parse and parse the arguments
 # parser를 만든다 이름은 ap
 ap = argparse.ArgumentParser()
@@ -35,7 +46,7 @@ args = vars(ap.parse_args())
 # ball in the HSV color space, then initialize the
 # list of tracked points
 # @@@오랜지 Hsv 색 범위 지정@@@
-orangeLower = (4, 150, 100)
+orangeLower = (6, 170, 100)
 orangeUpper = (24, 255, 255)
 pts = deque(maxlen=args["buffer"])
 # if a video path was not supplied, grab the reference
@@ -92,15 +103,61 @@ while True:
             cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
+            ######## DETECTING ########
+
             # line1
-            if center[0] > 200 and center[0] < 250:
+            if (
+                ball_isout == True
+                and center[0] > (902 - CHECK_RANGE)
+                and center[0] < 902
+            ):
+                if LINE1_TOGGLE == True:
+                    LINE1_TOGGLE = False
+                else:
+                    LINE1_TOGGLE = True
+                ball_isout = False
+
+                LINE1_XY = center
                 print("line1 detect")
                 print(center)
 
             # line2
-            if center[0] > 750 and center[0] < 800:
+            if (
+                ball_isout == True
+                and center[0] > 1802
+                and center[0] < (1802 + CHECK_RANGE)
+            ):
+                if LINE2_TOGGLE == True:
+                    LINE2_TOGGLE = False
+                else:
+                    LINE2_TOGGLE = True
+                ball_isout = False
+
+                LINE2_XY = center
                 print("line2 detect")
                 print(center)
+
+            # isout detector
+            if (
+                (center[0] < (902 - CHECK_RANGE))
+                or (center[0] > 902 and center[0] < 1802)
+                or (center[0] > 1802 + CHECK_RANGE)
+            ):
+                ball_isout = True
+
+            # line calculating
+            if LINE1_TOGGLE == True and LINE2_TOGGLE == True and line_ison == False:
+                FINAL_XY = (
+                    0,
+                    int(
+                        LINE1_XY[1]
+                        - (LINE1_XY[0])
+                        * (LINE1_XY[1] - LINE2_XY[1])
+                        / (LINE1_XY[0] - LINE2_XY[0])
+                    ),
+                )
+                line_ison = True
+                print(FINAL_XY)
 
     # update the points queue
     pts.appendleft(center)
@@ -114,6 +171,26 @@ while True:
         # draw the connecting lines
         thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+
+    # center line drawing
+    cv2.line(frame, (1352, 0), (1352, 1525), (255, 0, 0), 5)
+
+    # line1 drawing
+    if LINE1_TOGGLE == True:
+        cv2.rectangle(frame, (902 - CHECK_RANGE, 0, CHECK_RANGE, 1525), (0, 255, 0), 5)
+    else:
+        cv2.rectangle(frame, (902 - CHECK_RANGE, 0, CHECK_RANGE, 1525), (0, 0, 255), 5)
+
+    # line2 drawing
+    if LINE2_TOGGLE == True:
+        cv2.rectangle(frame, (1802, 0, CHECK_RANGE, 1525), (0, 255, 0), 5)
+    else:
+        cv2.rectangle(frame, (1802, 0, CHECK_RANGE, 1525), (0, 0, 255), 5)
+
+    # predict line drawing
+    if line_ison == True:
+        cv2.line(frame, FINAL_XY, LINE2_XY, (255, 0, 0), 5)
+
     # show the frame to our screen
     cv2.imshow("Frame", frame)
 
