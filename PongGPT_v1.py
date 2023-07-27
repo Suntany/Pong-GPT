@@ -53,7 +53,7 @@ pts = deque(maxlen=args["buffer"])
 # to the webcam
 if not args.get("video", False):
     # @@@비디오 장치 지정@@@
-    vs = VideoStream(src=0).start()
+    vs = VideoStream(src=1).start()
 # otherwise, grab a reference to the video file
 else:
     vs = cv2.VideoCapture(args["video"])
