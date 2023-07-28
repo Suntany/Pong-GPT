@@ -6,59 +6,10 @@ import argparse
 import cv2
 import imutils
 import time
-import socket
-import threading
-
-## Socket Communication
-
-host = '127.0.0.1'
-port = 10000
-DATA_Y = 0
-
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server.bind((host, port))
-server.listen()
-print('Service Started')
-
-clients = []
-
-# 서버가 받은 메시지를 클라이언트 전체에 보내기
-def broadcast(message):
-    for client in clients:
-        client.send(message.encode(encoding='utf-8'))
-
-
-def handle(client):
-    while True:
-        try:
-            # 클라이언트로부터 타당한 메시지를 받았는지 확인
-            message = '{},{}'.format(DATA_Y, 250)
-
-            # 브로드캐스트 함수 동작
-            broadcast(message)
-
-        except:
-            # 클라이언트가 나갔으면 알림
-            index = clients.index(client)
-            clients.remove(client)
-            client.close()
-            break
-
-
-# 멀티 클라이언트를 받는 메서드
-def receive():
-        while True:
-            client, address = server.accept()
-            print('Connected with {}'.format(str(address)))
-            clients.append(client)
-            thread = threading.Thread(target=handle, args=(client,))
-            thread.start()
-
 
 ##### 중요 환경 변수들 #####
-VIDEO_SELECTION = 1  # 0번이 메인 카메라 1번부터 서브 카메라 장치들
-VIDEO_WIDTH = 1525  # 화면 해상도 (1525x853)
+VIDEO_SELECTION = 0  # 0번이 메인 카메라 1번부터 서브 카메라 장치들
+VIDEO_WIDTH = 1000  # 화면 해상도 (1525x853)
 
 CENTER_LINE = 426
 LINE1_BOX = (0, 0, 1525, CENTER_LINE)
@@ -79,8 +30,8 @@ RALLY_COUNT = 0
 FINAL_XY = None
 
 # 주황색 탁구공 HSV 색 범위 지정
-orangeLower = (6, 170, 100)
-orangeUpper = (24, 255, 255)
+orangeLower = (18, 180, 230)
+orangeUpper = (40, 255, 255)
 
 # 파서 코딩 부분
 ap = argparse.ArgumentParser()
@@ -117,7 +68,7 @@ while True:
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
         # 최소 지름 넘겼을 경우 원 그리기
-        if radius > 10:
+        if radius > 5:
             cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
@@ -132,6 +83,8 @@ while True:
                 ball_in_2 = False
 
                 LINE1_XY = center
+                print("line1 detect : ", end="")
+                print(center)
 
             # line2
             if ball_in_2 == False and center[1] > CENTER_LINE and center[1] < 853:
@@ -143,12 +96,23 @@ while True:
                 ball_in_2 = True
 
                 LINE2_XY = center
+                print("line2 detect : ", end="")
+                print(center)
 
             # line calculating
             if LINE1_TOGGLE == True and LINE2_TOGGLE == True and line_ison == False:
-                DATA_Y = int(LINE1_XY[1]- (LINE1_XY[0]) * (LINE1_XY[1] - LINE2_XY[1]) / (LINE1_XY[0] - LINE2_XY[0]))
+                FINAL_XY = (
+                    0,
+                    int(
+                        LINE1_XY[1]
+                        - (LINE1_XY[0])
+                        * (LINE1_XY[1] - LINE2_XY[1])
+                        / (LINE1_XY[0] - LINE2_XY[0])
+                    ),
+                )
                 line_ison = True
-                receive()
+                print("FINAL_XY : ", end="")
+                print(center)
 
             # reset for next & rally pointing
             if LINE1_TOGGLE == False and LINE2_TOGGLE == False and line_ison == True:
@@ -157,6 +121,8 @@ while True:
                 LINE2_XY = None
                 FINAL_XY = None
                 line_ison = False
+                print("RALLY_COUNT : ", end="")
+                print(RALLY_COUNT)
 
     else:
         ball_in_1 = False
@@ -183,6 +149,8 @@ while True:
 
     if line_ison == True:
         cv2.line(frame, FINAL_XY, LINE2_XY, (255, 0, 0), 5)
+
+    cv2.line(frame, (500,0), (500,600), (0,200,0), 1)
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)
