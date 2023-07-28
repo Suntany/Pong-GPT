@@ -8,8 +8,8 @@ import imutils
 import time
 
 ##### 중요 환경 변수들 #####
-VIDEO_SELECTION = 1  # 0번이 메인 카메라 1번부터 서브 카메라 장치들
-VIDEO_WIDTH = 1525  # 화면 해상도 (1525x853)
+VIDEO_SELECTION = 0  # 0번이 메인 카메라 1번부터 서브 카메라 장치들
+VIDEO_WIDTH = 1000  # 화면 해상도 (1525x853)
 
 CENTER_LINE = 426
 LINE1_BOX = (0, 0, 1525, CENTER_LINE)
@@ -30,8 +30,8 @@ RALLY_COUNT = 0
 FINAL_XY = None
 
 # 주황색 탁구공 HSV 색 범위 지정
-orangeLower = (6, 170, 100)
-orangeUpper = (24, 255, 255)
+orangeLower = (18, 180, 230)
+orangeUpper = (40, 255, 255)
 
 # 파서 코딩 부분
 ap = argparse.ArgumentParser()
@@ -68,7 +68,7 @@ while True:
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
         # 최소 지름 넘겼을 경우 원 그리기
-        if radius > 10:
+        if radius > 5:
             cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
@@ -149,6 +149,8 @@ while True:
 
     if line_ison == True:
         cv2.line(frame, FINAL_XY, LINE2_XY, (255, 0, 0), 5)
+
+    cv2.line(frame, (500,0), (500,600), (0,200,0), 1)
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)
