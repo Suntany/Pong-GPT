@@ -8,7 +8,7 @@ import imutils
 import time
 
 ##### 중요 환경 변수들 #####
-VIDEO_SELECTION = 0  # 0번이 메인 카메라 1번부터 서브 카메라 장치들
+VIDEO_SELECTION = 1  # 0번이 메인 카메라 1번부터 서브 카메라 장치들
 VIDEO_WIDTH = 1000  # 화면 해상도 (1525x853)
 
 CENTER_LINE = 426
