@@ -11,15 +11,18 @@ import time
 VIDEO_SELECTION = 1  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
 WIDTH_CUT = 160
-CENTER_LINE = 500 # 세로 센터 라인
-NET_LINE = 640 # 네트 라인
+CENTER_LINE = 500  # 세로 센터 라인
+NET_LINE = 640  # 네트 라인
+
+CATCH_FRAME = 4
 
 # 초기화 변수들
 ball_in = False
 line_on = False
 
 RALLY_COUNT = 0
-FINAL_MOVE = None
+FINAL_MOVE = None  # 단위 cm
+FINAL_TIME = None  # 단위 ms
 
 # 주황색 탁구공 HSV 색 범위 지정 (창문쪽 형광등 두 개 키고 문쪽 형광등 한 개 껐을때 기준)
 orangeLower = (4, 158, 240)
@@ -33,8 +36,10 @@ args = vars(ap.parse_args())
 
 # 데큐 생성
 pts = deque(maxlen=args["buffer"])
-line_xy = deque(maxlen=2)
-temp_move = deque()
+line_xy = deque(maxlen=2)  # 단위 px
+time_xy = deque(maxlen=2)  # 단위 s
+temp_move = deque()  # 단위 px
+temp_speed = deque()  # 단위 px/ms
 
 # 비디오 스트리밍 시작
 vs = VideoStream(src=VIDEO_SELECTION).start()
@@ -48,7 +53,7 @@ while True:
         break
     # 화면비 (680x750)
     frame = imutils.resize(frame, width=VIDEO_WIDTH)
-    frame = frame[0:750, 160:1000-WIDTH_CUT]
+    frame = frame[0:750, 160 : 1000 - WIDTH_CUT]
     # 영상처리
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -69,22 +74,52 @@ while True:
         if line_on == False:
             print(center)
             line_xy.append(center)
+            time_xy.append(time.time())
             if len(line_xy) == 2:
                 if line_xy[0] != line_xy[1]:
-                    temp_move.append(int((1220-line_xy[0][1])*(line_xy[0][0]-line_xy[1][0])/(line_xy[0][1]-line_xy[1][1])+line_xy[0][0]))
+                    temp_move.append(
+                        int(
+                            (1220 - line_xy[0][1])
+                            * (line_xy[0][0] - line_xy[1][0])
+                            / (line_xy[0][1] - line_xy[1][1])
+                            + line_xy[0][0]
+                        )
+                    )
+                    temp_speed.append(
+                        int(
+                            sqrt(
+                                (line_xy[0][0] - line_xy[1][0]) ** 2
+                                + (line_xy[0][1] - line_xy[1][1]) ** 2
+                            )
+                            / ((time_xy[1] - time_xy[0]) * 1000)
+                        )
+                    )
 
-        if len(temp_move) == 4:
+        if len(temp_move) == CATCH_FRAME:
             temp_move.popleft()
-            temp_sum = 0
-            for i in range(3):
-                temp_sum += temp_move.popleft()
-            FINAL_MOVE = temp_sum/3
-            print("pixel")
-            print(FINAL_MOVE)
-            print("cm")
-            print(int(FINAL_MOVE*152.5/680))
-            line_on = True
+            temp_speed.popleft()
 
+            temp_move_sum = 0
+            for i in range(CATCH_FRAME - 1):
+                temp_sum += temp_move.popleft()
+            FINAL_MOVE = int(temp_sum / (CATCH_FRAME - 1) * (152.5 / 680))
+
+            temp_speed_sum = 0
+            for i in range(CATCH_FRAME - 1):
+                temp_speed_sum += temp_speed.popleft()
+            FINAL_TIME = int(
+                sqrt(
+                    (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
+                    + (line_xy[1][1] - 1220) ** 2
+                )
+                / ((time_xy[1] - time_xy[0]) * 1000)
+                / (temp_speed_sum / CATCH_FRAME - 1)
+            )
+
+            print(
+                "FINAL MOVE : {0}cm / FINAL TIME : {1}ms".format(FINAL_MOVE, FINAL_TIME)
+            )
+            line_on = True
 
     # 트레킹 레드라인 코드
     pts.appendleft(center)
@@ -94,14 +129,12 @@ while True:
         thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
-
-
     # 화면 표시 선 코드
     # 중앙선
-    cv2.line(frame, (CENTER_LINE,0), (CENTER_LINE,NET_LINE), (255,255,255), 2)
+    cv2.line(frame, (CENTER_LINE, 0), (CENTER_LINE, NET_LINE), (255, 255, 255), 2)
 
     # 네트선
-    cv2.line(frame, (0,NET_LINE), (VIDEO_WIDTH,NET_LINE), (255,255,255), 2)
+    cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)
