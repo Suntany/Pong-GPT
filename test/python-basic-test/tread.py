@@ -28,6 +28,7 @@ timethread = threading.Thread(target=time_alarm, args=(0.001,), daemon=True)
 timethread.start()
 
 print("[Main] start")
+print(2/3)
 for i in range(10):
     print("[Main]", end="")
     print(i)

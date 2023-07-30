@@ -12,7 +12,7 @@ import threading
 VIDEO_SELECTION = 1  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
 WIDTH_CUT = 160
-CENTER_LINE = 500  # 세로 센터 라인
+CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 640  # 네트 라인
 
 CATCH_FRAME = 4
@@ -72,7 +72,7 @@ while True:
         break
     # 화면비 (680x750)
     frame = imutils.resize(frame, width=VIDEO_WIDTH)
-    frame = frame[0:750, 160 : 1000 - WIDTH_CUT]
+    frame = frame[0:750, WIDTH_CUT : 1000 - WIDTH_CUT]
     # 영상처리
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -135,7 +135,7 @@ while True:
                     (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
                     + (line_xy[1][1] - 1220) ** 2
                 )
-                / (temp_speed_sum / CATCH_FRAME - 1)
+                / (temp_speed_sum / (CATCH_FRAME - 1))
             )
 
             print(
