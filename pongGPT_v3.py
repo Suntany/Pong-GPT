@@ -46,6 +46,7 @@ temp_speed = deque()  # 단위 px/ms
 
 # Line Activater 쓰레드 함수
 def line_activator(ETA):
+    global line_on
     print("Line Activated / Detecting LOCK")
     time.sleep(ETA)
     line_on = False
@@ -53,8 +54,6 @@ def line_activator(ETA):
     line_xy.clear()
     temp_move.clear()
     temp_speed.clear()
-    FINAL_MOVE = None
-    FINAL_ETA = None
 
 
 # 쓰레드 생성
