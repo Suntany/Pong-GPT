@@ -6,6 +6,7 @@ import argparse
 import cv2
 import imutils
 import time
+import threading
 
 ##### 중요 환경 변수들 #####
 VIDEO_SELECTION = 1  # 0번부터 카메라 포트 찾아서 1씩 올려보기
@@ -15,6 +16,7 @@ CENTER_LINE = 500  # 세로 센터 라인
 NET_LINE = 640  # 네트 라인
 
 CATCH_FRAME = 4
+MIN_GAP = 50
 
 # 초기화 변수들
 ball_in = False
@@ -40,6 +42,27 @@ line_xy = deque(maxlen=2)  # 단위 px
 time_xy = deque(maxlen=2)  # 단위 s
 temp_move = deque()  # 단위 px
 temp_speed = deque()  # 단위 px/ms
+
+
+# Line Activater 쓰레드 함수
+def line_activator(ETA):
+    line_on = True
+    print("Line Activated / Detecting LOCK")
+    time.sleep(ETA)
+    line_on = False
+    print("Line Deactivated / Detecting UNLOCK")
+    line_xy.clear()
+    temp_move.clear()
+    temp_speed.clear()
+    line_on = False
+    FINAL_MOVE = None
+    FINAL_ETA = None
+
+
+# 쓰레드 생성
+newline_act = threading.Thead(
+    target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
+)
 
 # 비디오 스트리밍 시작
 vs = VideoStream(src=VIDEO_SELECTION).start()
@@ -76,7 +99,7 @@ while True:
             line_xy.append(center)
             time_xy.append(time.time())
             if len(line_xy) == 2:
-                if line_xy[0] != line_xy[1]:
+                if line_xy[0][1] + MIN_GAP < line_xy[1][1]:
                     temp_move.append(
                         int(
                             (1220 - line_xy[0][1])
@@ -118,7 +141,7 @@ while True:
             print(
                 "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(FINAL_MOVE, FINAL_ETA)
             )
-            line_on = True
+            newline_act.start()
 
     # 트레킹 레드라인 코드
     pts.appendleft(center)
@@ -145,6 +168,7 @@ while True:
     elif key == ord("r"):
         line_xy.clear()
         temp_move.clear()
+        temp_speed.clear()
         line_on = False
         FINAL_MOVE = None
         FINAL_ETA = None
