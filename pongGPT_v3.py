@@ -22,7 +22,7 @@ line_on = False
 
 RALLY_COUNT = 0
 FINAL_MOVE = None  # 단위 cm
-FINAL_TIME = None  # 단위 ms
+FINAL_ETA = None  # 단위 ms
 
 # 주황색 탁구공 HSV 색 범위 지정 (창문쪽 형광등 두 개 키고 문쪽 형광등 한 개 껐을때 기준)
 orangeLower = (4, 158, 240)
@@ -107,7 +107,7 @@ while True:
             temp_speed_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_speed_sum += temp_speed.popleft()
-            FINAL_TIME = int(
+            FINAL_ETA = int(
                 sqrt(
                     (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
                     + (line_xy[1][1] - 1220) ** 2
@@ -116,7 +116,7 @@ while True:
             )
 
             print(
-                "FINAL MOVE : {0}cm / FINAL TIME : {1}ms".format(FINAL_MOVE, FINAL_TIME)
+                "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(FINAL_MOVE, FINAL_ETA)
             )
             line_on = True
 
@@ -147,6 +147,7 @@ while True:
         temp_move.clear()
         line_on = False
         FINAL_MOVE = None
+        FINAL_ETA = None
 
 
 # if we are not using a video file, stop the camera video stream
