@@ -112,7 +112,6 @@ while True:
                     (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
                     + (line_xy[1][1] - 1220) ** 2
                 )
-                / ((time_xy[1] - time_xy[0]) * 1000)
                 / (temp_speed_sum / CATCH_FRAME - 1)
             )
 
