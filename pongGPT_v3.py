@@ -17,6 +17,7 @@ NET_LINE = 640  # 네트 라인
 
 CATCH_FRAME = 4
 MIN_GAP = 10
+ETA_FIX = 80
 
 # 초기화 변수들
 ball_in = False
@@ -135,7 +136,7 @@ while True:
                     + (line_xy[1][1] - 1220) ** 2
                 )
                 / (temp_speed_sum / (CATCH_FRAME - 1))
-            )
+            )+ ETA_FIX
 
             print(
                 "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(FINAL_MOVE, FINAL_ETA)
