@@ -59,6 +59,7 @@ while True:
     mask = cv2.inRange(hsv, orangeLower, orangeUpper)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
+    cv2.imshow("mask", mask)
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     center = None
@@ -68,7 +69,7 @@ while True:
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-        
+
         print(center)
         # 최소 지름 넘겼을 경우 원 그리기
         if radius > 5:
@@ -83,8 +84,7 @@ while True:
         thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
         cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 
-
-    cv2.line(frame, (500,0), (500,600), (0,200,0), 1)
+    cv2.line(frame, (500, 0), (500, 600), (0, 200, 0), 1)
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)

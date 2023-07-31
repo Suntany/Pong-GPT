@@ -11,24 +11,25 @@ import socket
 
 
 # 소켓통신
-host = '127.0.0.1'
+host = "127.0.0.1"
 port = 10000
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((host, port))
 server.listen()
-print('Service Started.')
+print("Service Started.")
 
 clients = []
 
+
 def handle(client, fin_move, fin_eta):
     try:
-        message = '{0},{1}'.format(fin_move, fin_eta)
+        message = "{0},{1}".format(fin_move, fin_eta)
 
         # 서버가 받은 메시지를 클라이언트 전체에 보내기
         for client in clients:
-            client.send(message.encode(encoding='utf-8'))
+            client.send(message.encode(encoding="utf-8"))
 
     except:
         # 클라이언트가 나갔으면 알림
@@ -39,7 +40,7 @@ def handle(client, fin_move, fin_eta):
 
 # 멀티 클라이언트를 받는 메서드
 client, address = server.accept()
-print('Connected with {}'.format(str(address)))
+print("Connected with {}".format(str(address)))
 clients.append(client)
 
 ##### 중요 환경 변수들 #####
@@ -114,6 +115,7 @@ while True:
     mask = cv2.inRange(hsv, orangeLower, orangeUpper)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
+    cv2.imshow("mask", mask)
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     center = None
@@ -126,7 +128,7 @@ while True:
 
         # 탁구 알고리즘
         if line_on == False:
-            #print(center)
+            # print(center)
             line_xy.append(center)
             time_xy.append(time.time())
             if len(line_xy) == 2:
@@ -150,7 +152,7 @@ while True:
                     )
 
         if len(temp_move) == CATCH_FRAME:
-            #디버깅
+            # 디버깅
             print(temp_speed)
             print(line_xy[1])
 
@@ -165,24 +167,35 @@ while True:
             temp_speed_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_speed_sum += temp_speed.popleft()
-            FINAL_ETA = int(
-                np.sqrt(
-                    (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
-                    + (line_xy[1][1] - 1220) ** 2
+            FINAL_ETA = (
+                int(
+                    np.sqrt(
+                        (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
+                        + (line_xy[1][1] - 1220) ** 2
+                    )
+                    / (temp_speed_sum / (CATCH_FRAME - 1))
                 )
-                / (temp_speed_sum / (CATCH_FRAME - 1))
-            )+ ETA_FIX
+                + ETA_FIX
+            )
 
             print(
                 "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(FINAL_MOVE, FINAL_ETA)
             )
             line_on = True
-            thread = threading.Thread(target=handle, args=(client,FINAL_MOVE, FINAL_ETA,))
+            thread = threading.Thread(
+                target=handle,
+                args=(
+                    client,
+                    FINAL_MOVE,
+                    FINAL_ETA,
+                ),
+            )
             thread.start()
-        
-            newline_act = threading.Thread(target=line_activator, args=(FINAL_ETA / 1000,), daemon=True)
-            newline_act.start()
 
+            newline_act = threading.Thread(
+                target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
+            )
+            newline_act.start()
 
     # 트레킹 레드라인 코드
     pts.appendleft(center)
