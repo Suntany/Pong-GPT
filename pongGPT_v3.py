@@ -53,6 +53,7 @@ def line_activator(ETA):
     line_on = False
     print("Line Deactivated / Detecting UNLOCK")
     line_xy.clear()
+    time_xy.clear()
     temp_move.clear()
     temp_speed.clear()
 
@@ -171,6 +172,7 @@ while True:
         break
     elif key == ord("r"):
         line_xy.clear()
+        time_xy.clear()
         temp_move.clear()
         temp_speed.clear()
         line_on = False
