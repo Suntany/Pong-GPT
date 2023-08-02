@@ -50,7 +50,7 @@ WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 640  # 네트 라인
 
-CATCH_FRAME = 2
+CATCH_FRAME = 3
 MIN_GAP = 10
 ETA_FIX = 80
 
