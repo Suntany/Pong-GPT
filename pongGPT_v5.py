@@ -30,6 +30,7 @@ for i in range(2):
     client, address = server.accept()
     print("Connected with {}".format(str(address)))
     check_token = client.recv(1024)
+    print(check_token)
     if check_token == "a":
         print("Actuator Connected!")
         client_actu = client
