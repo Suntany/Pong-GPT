@@ -72,10 +72,7 @@ MIN_GAP = 10
 ETA_FIX = 80
 
 # 초기화 변수들
-ball_in = False
 line_on = False
-
-RALLY_COUNT = 0
 FINAL_MOVE = 0  # 단위 cm
 FINAL_ETA = 0  # 단위 ms
 FINAL_ANGLE = 0  # 단위 tangent
