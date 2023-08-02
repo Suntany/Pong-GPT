@@ -101,6 +101,7 @@ temp_speed = deque()  # 단위 px/ms
 # Line Activater 쓰레드 함수
 def line_activator(ETA):
     global line_on
+    line_on = True
     print("Line Activated / Detecting LOCK")
     time.sleep(ETA)
     line_on = False
@@ -143,7 +144,6 @@ while True:
 
         # 탁구 알고리즘
         if line_on == False:
-            # print(center)
             line_xy.append(center)
             time_xy.append(time.time())
             if len(line_xy) == 2:
@@ -189,8 +189,14 @@ while True:
                     FINAL_MOVE, FINAL_ETA, FINAL_ANGLE
                 )
             )
-            line_on = True
 
+            # 감지 대기 쓰레드
+            lineact_tr = threading.Thread(
+                target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
+            )
+            lineact_tr_act.start()
+
+            # 엑추에이터 송신 쓰레드
             actu_tr = threading.Thread(
                 target=actu_send,
                 args=(
@@ -201,18 +207,14 @@ while True:
             )
             actu_tr.start()
 
+            # 로봇팔 송신 쓰레드
             arm_tr = threading.Thread(
                 target=arm_send,
                 args=(client_arm, FINAL_ETA, FINAL_ANGLE),
             )
             arm_tr.start()
 
-            newline_act = threading.Thread(
-                target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
-            )
-            newline_act.start()
-
-    # 트레킹 레드라인 코드
+    # rgb 트레킹 레드라인 코드
     pts.appendleft(center)
     for i in range(1, len(pts)):
         if pts[i - 1] is None or pts[i] is None:
@@ -227,11 +229,11 @@ while True:
     # 네트선
     cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
 
-    # show the frame to our screen
+    # 화면 띄우기
     cv2.imshow("Frame", frame)
 
+    # q : 종료 r : 리셋
     key = cv2.waitKey(1) & 0xFF
-    # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
     elif key == ord("r"):
@@ -244,12 +246,9 @@ while True:
         FINAL_ETA = None
         FINAL_ANGLE = None
 
-
-# if we are not using a video file, stop the camera video stream
 if not args.get("video", False):
     vs.stop()
-# otherwise, release the camera
 else:
     vs.release()
-# close all windows
+
 cv2.destroyAllWindows()
