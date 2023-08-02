@@ -21,7 +21,7 @@ server.bind((host, port))
 server.listen()
 print("Connection Ready...")
 
-# clients = []
+# clients
 client_actu = None
 client_arm = None
 
@@ -29,8 +29,7 @@ client_arm = None
 for i in range(2):
     client, address = server.accept()
     print("Connected with {}".format(str(address)))
-    check_token = client.recv(1024)
-    print(check_token)
+    check_token = client.recv(1).decode()
     if check_token == "a":
         print("Actuator Connected!")
         client_actu = client
@@ -42,14 +41,24 @@ for i in range(2):
         exit()
 
 
-def handle(client, fin_move, fin_eta):
+# 엑추에이터 값 전달
+def actu_send(client_actu, fin_move, fin_eta):
     try:
         message = "{0},{1}".format(fin_move, fin_eta)
+        client_actu.send(message.encode(encoding="utf-8"))
 
-        # 서버가 받은 메시지를 클라이언트 전체에 보내기
-        for client in clients:
-            client.send(message.encode(encoding="utf-8"))
+    except:
+        # 클라이언트가 나갔으면 알림
+        index = clients.index(client)
+        clients.remove(client)
+        client.close()
 
+
+# 로봇팔 값 전달
+def arm_send(client_arm, fin_eta, fin_angle):
+    try:
+        message = "{0},{1}".format(fin_eta, fin_angle)
+        client_arm.send(message.encode(encoding="utf-8"))
     except:
         # 클라이언트가 나갔으면 알림
         index = clients.index(client)
@@ -75,6 +84,7 @@ line_on = False
 RALLY_COUNT = 0
 FINAL_MOVE = 0  # 단위 cm
 FINAL_ETA = 0  # 단위 ms
+FINAL_ANGLE = 0  # 단위 degree
 
 # 주황색 탁구공 HSV 색 범위 지정 (창문쪽 형광등 두 개 키고 문쪽 형광등 한 개 껐을때 기준)
 orangeLower = (1, 130, 240)
@@ -105,9 +115,6 @@ def line_activator(ETA):
     time_xy.clear()
     temp_move.clear()
     temp_speed.clear()
-
-
-# 쓰레드 생성
 
 
 # 비디오 스트리밍 시작
@@ -196,15 +203,22 @@ while True:
                 "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(FINAL_MOVE, FINAL_ETA)
             )
             line_on = True
-            thread = threading.Thread(
-                target=handle,
+
+            actu_tr = threading.Thread(
+                target=actu_send,
                 args=(
-                    client,
+                    client_actu,
                     FINAL_MOVE,
                     FINAL_ETA,
                 ),
             )
-            thread.start()
+            actu_tr.start()
+
+            arm_tr = threading.Thread(
+                target=arm_send,
+                args=(client_arm, FINAL_ETA, FINAL_ANGLE),
+            )
+            arm_tr.start()
 
             newline_act = threading.Thread(
                 target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
