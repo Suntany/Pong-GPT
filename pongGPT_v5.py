@@ -48,10 +48,7 @@ def actu_send(client_actu, fin_move, fin_eta):
         client_actu.send(message.encode(encoding="utf-8"))
 
     except:
-        # 클라이언트가 나갔으면 알림
-        index = clients.index(client)
-        clients.remove(client)
-        client.close()
+        client_actu.close()
 
 
 # 로봇팔 값 전달
@@ -60,10 +57,7 @@ def arm_send(client_arm, fin_eta, fin_angle):
         message = "{0},{1}".format(fin_eta, fin_angle)
         client_arm.send(message.encode(encoding="utf-8"))
     except:
-        # 클라이언트가 나갔으면 알림
-        index = clients.index(client)
-        clients.remove(client)
-        client.close()
+        client_arm.close()
 
 
 ##### 중요 환경 변수들 #####
@@ -84,7 +78,7 @@ line_on = False
 RALLY_COUNT = 0
 FINAL_MOVE = 0  # 단위 cm
 FINAL_ETA = 0  # 단위 ms
-FINAL_ANGLE = 0  # 단위 degree
+FINAL_ANGLE = 0  # 단위 tangent
 
 # 주황색 탁구공 HSV 색 범위 지정 (창문쪽 형광등 두 개 키고 문쪽 형광등 한 개 껐을때 기준)
 orangeLower = (1, 130, 240)
@@ -199,8 +193,14 @@ while True:
                 + ETA_FIX
             )
 
+            FINAL_ANGLE = (1220 - line_xy[1][1]) / (
+                line_xy[1][0] - FINAL_MOVE * (680 / 152.5)
+            )
+
             print(
-                "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(FINAL_MOVE, FINAL_ETA)
+                "FINAL MOVE : {0}cm / FINAL ETA : {1}ms / FINAL ANGLE : {2}".format(
+                    FINAL_MOVE, FINAL_ETA, FINAL_ANGLE
+                )
             )
             line_on = True
 

@@ -8,6 +8,9 @@ import imutils
 import time
 import threading
 
+print("########### Pong GPT V5 NN ############")
+
+
 ##### 중요 환경 변수들 #####
 VIDEO_SELECTION = 0  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
@@ -15,7 +18,7 @@ WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 640  # 네트 라인
 
-CATCH_FRAME = 4
+CATCH_FRAME = 3
 MIN_GAP = 10
 ETA_FIX = 80
 
@@ -26,6 +29,7 @@ line_on = False
 RALLY_COUNT = 0
 FINAL_MOVE = 0  # 단위 cm
 FINAL_ETA = 0  # 단위 ms
+FINAL_ANGLE = 0  # 단위 tangent
 
 # 주황색 탁구공 HSV 색 범위 지정 (창문쪽 형광등 두 개 키고 문쪽 형광등 한 개 껐을때 기준)
 orangeLower = (1, 130, 240)
@@ -58,9 +62,6 @@ def line_activator(ETA):
     temp_speed.clear()
 
 
-# 쓰레드 생성
-
-
 # 비디오 스트리밍 시작
 vs = VideoStream(src=VIDEO_SELECTION).start()
 time.sleep(2.0)
@@ -80,6 +81,7 @@ while True:
     mask = cv2.inRange(hsv, orangeLower, orangeUpper)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
+    cv2.imshow("mask", mask)
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     center = None
@@ -142,8 +144,12 @@ while True:
                 + ETA_FIX
             )
 
+            FINAL_ANGLE = np.arctan(
+                (1220 - line_xy[1][1]) / (line_xy[1][0] - FINAL_MOVE * (680 / 152.5))
+            )
+
             print(
-                "FINAL MOVE : {0}cm / FINAL ETA : {1}ms".format(
+                "FINAL MOVE : {0}cm / FINAL ETA : {1}ms / FINAL ANGLE : {2}".format(
                     FINAL_MOVE, FINAL_ETA, FINAL_ANGLE
                 )
             )
