@@ -158,19 +158,12 @@ while True:
                     )
                     temp_speed.append(
                         int(
-                            np.sqrt(
-                                (line_xy[0][0] - line_xy[1][0]) ** 2
-                                + (line_xy[0][1] - line_xy[1][1]) ** 2
-                            )
+                            (line_xy[0][1] - line_xy[1][1])
                             / ((time_xy[1] - time_xy[0]) * 1000)
                         )
                     )
 
         if len(temp_move) == CATCH_FRAME:
-            # 디버깅
-            print(temp_speed)
-            print(line_xy[1])
-
             temp_move.popleft()
             temp_speed.popleft()
 
@@ -183,13 +176,7 @@ while True:
             for i in range(CATCH_FRAME - 1):
                 temp_speed_sum += temp_speed.popleft()
             FINAL_ETA = (
-                int(
-                    np.sqrt(
-                        (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
-                        + (line_xy[1][1] - 1220) ** 2
-                    )
-                    / (temp_speed_sum / (CATCH_FRAME - 1))
-                )
+                int((1220 - line_xy[1][1]) / (temp_speed_sum / (CATCH_FRAME - 1)))
                 + ETA_FIX
             )
 
@@ -255,6 +242,7 @@ while True:
         line_on = False
         FINAL_MOVE = None
         FINAL_ETA = None
+        FINAL_ANGLE = None
 
 
 # if we are not using a video file, stop the camera video stream
