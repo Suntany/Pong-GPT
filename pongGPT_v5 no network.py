@@ -10,7 +10,6 @@ import threading
 
 print("########### Pong GPT V5 ############")
 
-
 ##### 중요 환경 변수들 #####
 VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
@@ -20,7 +19,8 @@ NET_LINE = 640  # 네트 라인
 
 CATCH_FRAME = 3
 MIN_GAP = 10
-ETA_FIX = 80
+MOVE_FIX = 0.25
+ETA_FIX = 100
 
 # 초기화 변수들
 line_on = False
@@ -114,12 +114,16 @@ while True:
         if len(temp_move) == CATCH_FRAME:
             temp_move.popleft()
             temp_speed.popleft()
-            
+
             # move 계산
             temp_move_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_move_sum += temp_move.popleft()
             FINAL_MOVE = int(temp_move_sum / (CATCH_FRAME - 1) * (152.5 / 680))
+            if FINAL_MOVE < 76:
+                FINAL_MOVE += int((76 - FINAL_MOVE) * MOVE_FIX)
+            else:
+                FINAL_MOVE -= int((FINAL_MOVE - 76) * MOVE_FIX)
 
             # ETA 계산
             temp_speed_sum = 0
@@ -146,7 +150,6 @@ while True:
                 target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
             )
             lineact_tr.start()
-
 
     # rgb 트레킹 레드라인 코드
     pts.appendleft(center)

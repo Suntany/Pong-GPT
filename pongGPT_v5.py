@@ -27,6 +27,8 @@ client_arm = None
 
 # 두 명의 클라이언트를 받음
 for i in range(2):
+    if i == 1:
+        print("Next Connection Waiting...")
     client, address = server.accept()
     print("Connected with {}".format(str(address)))
     check_token = client.recv(1).decode()
