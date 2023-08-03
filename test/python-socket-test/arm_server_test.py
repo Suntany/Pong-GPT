@@ -32,9 +32,9 @@ def arm_send(client_arm, fin_eta, fin_angle):
 client, address = server.accept()
 print("Connected with {}".format(str(address)))
 check_token = client.recv(1).decode()
-if check_token == "a":
-    print("Actuator Connected!")
-    client_actu = client
+if check_token == "r":
+    print("Arm Connected!")
+    client_arm = client
 else:
     print("Connection Error")
     exit()

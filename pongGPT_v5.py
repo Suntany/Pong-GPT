@@ -63,16 +63,16 @@ def arm_send(client_arm, fin_eta, fin_angle):
 
 
 ##### 중요 환경 변수들 #####
-VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
+VIDEO_SELECTION = 1  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
 WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 640  # 네트 라인
 
 CATCH_FRAME = 3
-MIN_GAP = 10
-MOVE_FIX = 0.25
-ETA_FIX = 100
+MIN_GAP = 50
+MOVE_FIX = 0.1
+ETA_FIX = 120
 
 # 초기화 변수들
 line_on = False
@@ -162,6 +162,10 @@ while True:
                             / ((time_xy[1] - time_xy[0]) * 1000)
                         )
                     )
+                if line_xy[0][1] > line_xy[1][1]:
+                    line_xy.clear()
+                    time_xy.clear()
+
 
         if len(temp_move) == CATCH_FRAME:
             temp_move.popleft()
@@ -185,6 +189,9 @@ while True:
                 int((1220 - line_xy[1][1]) / (temp_speed_sum / (CATCH_FRAME - 1)))
                 + ETA_FIX
             )
+
+            # [[치트키]] 고정 
+            FINAL_ETA = 200
 
             # TANGENT 계산
             FINAL_ANGLE = (1220 - line_xy[1][1]) / (
