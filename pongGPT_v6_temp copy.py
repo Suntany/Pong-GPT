@@ -8,56 +8,26 @@ import imutils
 import time
 import threading
 import socket
+import pyrealsense2 as rs
 
 print("########### Pong GPT V5 ############")
 
-# TCP/IP 소켓통신
-host = "127.0.0.1"
-port = 10000
+# Realsense Booting up
+pipeline = rs.pipeline()
+config = rs.config()
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server.bind((host, port))
-server.listen()
-print("Connection Ready...")
+# Get device product line for setting a supporting resolution
+pipeline_wrapper = rs.pipeline_wrapper(pipeline)
+pipeline_profile = config.resolve(pipeline_wrapper)
+device = pipeline_profile.get_device()
+device_product_line = str(device.get_info(rs.camera_info.product_line))
 
-# clients
-client_actu = None
-client_arm = None
+config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-# 두 명의 클라이언트를 받음
-for i in range(2):
-    client, address = server.accept()
-    print("Connected with {}".format(str(address)))
-    check_token = client.recv(1).decode()
-    if check_token == "a":
-        print("Actuator Connected!")
-        client_actu = client
-    elif check_token == "r":
-        print("Robot Arm Connected!")
-        client_arm = client
-    else:
-        print("Connection Error")
-        exit()
+pipeline.start(config)
 
 
-# 엑추에이터 값 전달
-def actu_send(client_actu, fin_move, fin_eta):
-    try:
-        message = "{0},{1}".format(fin_move, fin_eta)
-        client_actu.send(message.encode(encoding="utf-8"))
-
-    except:
-        client_actu.close()
-
-
-# 로봇팔 값 전달
-def arm_send(client_arm, fin_eta, fin_angle):
-    try:
-        message = "{0},{1}".format(fin_eta, fin_angle)
-        client_arm.send(message.encode(encoding="utf-8"))
-    except:
-        client_arm.close()
 
 
 ##### 중요 환경 변수들 #####
@@ -69,11 +39,12 @@ NET_LINE = 640  # 네트 라인
 
 CATCH_FRAME = 3
 MIN_GAP = 10
-MOVE_FIX = 0.1
 ETA_FIX = 80
+CENTER_BOUND = 150
 
 # 초기화 변수들
 line_on = False
+
 FINAL_MOVE = 0  # 단위 cm
 FINAL_ETA = 0  # 단위 ms
 FINAL_ANGLE = 0  # 단위 tangent
@@ -90,6 +61,7 @@ args = vars(ap.parse_args())
 
 # 데큐 생성
 pts = deque(maxlen=args["buffer"])
+pts2 = deque(maxlen=args["buffer"])
 line_xy = deque(maxlen=2)  # 단위 px
 time_xy = deque(maxlen=2)  # 단위 s
 temp_move = deque()  # 단위 px
@@ -109,21 +81,25 @@ def line_activator(ETA):
     temp_move.clear()
     temp_speed.clear()
 
-
-# 비디오 스트리밍 시작
-vs = VideoStream(src=VIDEO_SELECTION).start()
-time.sleep(2.0)
-
 # 프레임 단위 무한 루프 영역
 while True:
-    frame = vs.read()
+    frames = pipeline.wait_for_frames()
+    depth_frame = frames.get_depth_frame()
+    color_frame = frames.get_color_frame()
+    if not(depth_frame and color_frame):
+        continue
+    depth_image = np.asanyarray(depth_frame.get_data())
+    frame = np.asanyarray(color_frame.get_data())
     frame = frame[1] if args.get("video", False) else frame
     if frame is None:
         break
-    # 화면비 (680x750)
+    # 화면비 맞추기 (680x750)
     frame = imutils.resize(frame, width=VIDEO_WIDTH)
+    depth_image = imutils.resize(depth_image, width=VIDEO_WIDTH)
     frame = frame[0:750, WIDTH_CUT : 1000 - WIDTH_CUT]
+    depth_image = depth_image[0:750, WIDTH_CUT : 1000 - WIDTH_CUT]
     # 영상처리
+    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, orangeLower, orangeUpper)
@@ -139,6 +115,22 @@ while True:
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+        # rgb 트레킹 레드라인 코드
+        pts.appendleft(center)
+        for i in range(1, len(pts)):
+            if pts[i - 1] is None or pts[i] is None:
+                continue
+            thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
+            cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+
+        if (center[0] < CENTER_BOUND or center[0] > VIDEO_WIDTH - WIDTH_CUT - CENTER_BOUND): ## Near edge of the table. Additional value may subject to change.
+             dist = depth_frame.get_distance(center[0] + 10, center[1])
+        else: ## Near center of the table
+             dist = depth_frame.get_distance(center[0] + 4, center[1])
+        dist = round(dist, 2)
+        dist *= 100
+        realcenter = (center[0]* dist / 135, center[1] * dist / 135)
 
         # 탁구 알고리즘
         if line_on == False:
@@ -156,7 +148,7 @@ while True:
                     )
                     temp_speed.append(
                         int(
-                            (line_xy[1][1] - line_xy[0][1])
+                            (line_xy[0][1] - line_xy[1][1])
                             / ((time_xy[1] - time_xy[0]) * 1000)
                         )
                     )
@@ -165,17 +157,11 @@ while True:
             temp_move.popleft()
             temp_speed.popleft()
 
-            # move 계산
             temp_move_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_move_sum += temp_move.popleft()
             FINAL_MOVE = int(temp_move_sum / (CATCH_FRAME - 1) * (152.5 / 680))
-            if FINAL_MOVE < 76:
-                FINAL_MOVE -= int((76 - FINAL_MOVE) * MOVE_FIX)
-            else:
-                FINAL_MOVE += int((FINAL_MOVE - 76) * MOVE_FIX)
 
-            # ETA 계산
             temp_speed_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_speed_sum += temp_speed.popleft()
@@ -184,7 +170,6 @@ while True:
                 + ETA_FIX
             )
 
-            # TANGENT 계산
             FINAL_ANGLE = (1220 - line_xy[1][1]) / (
                 line_xy[1][0] - FINAL_MOVE * (680 / 152.5)
             )
@@ -201,31 +186,13 @@ while True:
             )
             lineact_tr.start()
 
-            # 엑추에이터 송신 쓰레드
-            actu_tr = threading.Thread(
-                target=actu_send,
-                args=(
-                    client_actu,
-                    FINAL_MOVE,
-                    FINAL_ETA,
-                ),
-            )
-            actu_tr.start()
-
-            # 로봇팔 송신 쓰레드
-            arm_tr = threading.Thread(
-                target=arm_send,
-                args=(client_arm, FINAL_ETA, FINAL_ANGLE),
-            )
-            arm_tr.start()
-
-    # rgb 트레킹 레드라인 코드
-    pts.appendleft(center)
-    for i in range(1, len(pts)):
-        if pts[i - 1] is None or pts[i] is None:
+    # depth 트레킹 레드라인 코드
+    pts2.appendleft(realcenter)
+    for i in range(1, len(pts2)):
+        if pts2[i - 1] is None or pts2[i] is None:
             continue
         thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
-        cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+        cv2.line(frame, pts[i - 1], pts[i], (0, 255, 0), thickness)
 
     # 화면 표시 선 코드
     # 중앙선
@@ -234,8 +201,12 @@ while True:
     # 네트선
     cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
 
+    images = np.hstack((frame, depth_colormap))
+    images = imutils.resize(images,width=500)
+    
     # 화면 띄우기
-    cv2.imshow("Frame", frame)
+    cv2.imshow("Pong GPT V5", images)
+    cv2.imshow("mask",mask)
 
     # q : 종료 r : 리셋
     key = cv2.waitKey(1) & 0xFF
@@ -250,10 +221,5 @@ while True:
         FINAL_MOVE = None
         FINAL_ETA = None
         FINAL_ANGLE = None
-
-if not args.get("video", False):
-    vs.stop()
-else:
-    vs.release()
 
 cv2.destroyAllWindows()
