@@ -191,7 +191,7 @@ while True:
             lineact_tr = threading.Thread(
                 target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
             )
-            lineact_tr_act.start()
+            lineact_tr.start()
 
             # 엑추에이터 송신 쓰레드
             actu_tr = threading.Thread(

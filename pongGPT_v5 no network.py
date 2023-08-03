@@ -8,11 +8,11 @@ import imutils
 import time
 import threading
 
-print("########### Pong GPT V5 NN ############")
+print("########### Pong GPT V5 ############")
 
 
 ##### 중요 환경 변수들 #####
-VIDEO_SELECTION = 0  # 0번부터 카메라 포트 찾아서 1씩 올려보기
+VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
 WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
@@ -23,10 +23,7 @@ MIN_GAP = 10
 ETA_FIX = 80
 
 # 초기화 변수들
-ball_in = False
 line_on = False
-
-RALLY_COUNT = 0
 FINAL_MOVE = 0  # 단위 cm
 FINAL_ETA = 0  # 단위 ms
 FINAL_ANGLE = 0  # 단위 tangent
@@ -52,6 +49,7 @@ temp_speed = deque()  # 단위 px/ms
 # Line Activater 쓰레드 함수
 def line_activator(ETA):
     global line_on
+    line_on = True
     print("Line Activated / Detecting LOCK")
     time.sleep(ETA)
     line_on = False
@@ -94,7 +92,6 @@ while True:
 
         # 탁구 알고리즘
         if line_on == False:
-            # print(center)
             line_xy.append(center)
             time_xy.append(time.time())
             if len(line_xy) == 2:
@@ -109,19 +106,13 @@ while True:
                     )
                     temp_speed.append(
                         int(
-                            np.sqrt(
-                                (line_xy[0][0] - line_xy[1][0]) ** 2
-                                + (line_xy[0][1] - line_xy[1][1]) ** 2
-                            )
+                            (line_xy[1][1] - line_xy[0][1])
                             / ((time_xy[1] - time_xy[0]) * 1000)
                         )
                     )
 
         if len(temp_move) == CATCH_FRAME:
-            # 디버깅
             print(temp_speed)
-            print(line_xy[1])
-
             temp_move.popleft()
             temp_speed.popleft()
 
@@ -134,18 +125,12 @@ while True:
             for i in range(CATCH_FRAME - 1):
                 temp_speed_sum += temp_speed.popleft()
             FINAL_ETA = (
-                int(
-                    np.sqrt(
-                        (line_xy[1][0] - FINAL_MOVE * (680 / 152.5)) ** 2
-                        + (line_xy[1][1] - 1220) ** 2
-                    )
-                    / (temp_speed_sum / (CATCH_FRAME - 1))
-                )
+                int((1220 - line_xy[1][1]) / (temp_speed_sum / (CATCH_FRAME - 1)))
                 + ETA_FIX
             )
 
-            FINAL_ANGLE = np.arctan(
-                (1220 - line_xy[1][1]) / (line_xy[1][0] - FINAL_MOVE * (680 / 152.5))
+            FINAL_ANGLE = (1220 - line_xy[1][1]) / (
+                line_xy[1][0] - FINAL_MOVE * (680 / 152.5)
             )
 
             print(
@@ -153,14 +138,15 @@ while True:
                     FINAL_MOVE, FINAL_ETA, FINAL_ANGLE
                 )
             )
-            line_on = True
 
-            newline_act = threading.Thread(
+            # 감지 대기 쓰레드
+            lineact_tr = threading.Thread(
                 target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
             )
-            newline_act.start()
+            lineact_tr.start()
 
-    # 트레킹 레드라인 코드
+
+    # rgb 트레킹 레드라인 코드
     pts.appendleft(center)
     for i in range(1, len(pts)):
         if pts[i - 1] is None or pts[i] is None:
@@ -175,11 +161,11 @@ while True:
     # 네트선
     cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
 
-    # show the frame to our screen
+    # 화면 띄우기
     cv2.imshow("Frame", frame)
 
+    # q : 종료 r : 리셋
     key = cv2.waitKey(1) & 0xFF
-    # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
     elif key == ord("r"):
@@ -190,13 +176,11 @@ while True:
         line_on = False
         FINAL_MOVE = None
         FINAL_ETA = None
+        FINAL_ANGLE = None
 
-
-# if we are not using a video file, stop the camera video stream
 if not args.get("video", False):
     vs.stop()
-# otherwise, release the camera
 else:
     vs.release()
-# close all windows
+
 cv2.destroyAllWindows()
