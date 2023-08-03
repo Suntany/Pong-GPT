@@ -155,7 +155,7 @@ while True:
                     )
                     temp_speed.append(
                         int(
-                            (line_xy[0][1] - line_xy[1][1])
+                            (line_xy[1][1] - line_xy[0][1])
                             / ((time_xy[1] - time_xy[0]) * 1000)
                         )
                     )

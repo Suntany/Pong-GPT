@@ -112,15 +112,16 @@ while True:
                     )
 
         if len(temp_move) == CATCH_FRAME:
-            print(temp_speed)
             temp_move.popleft()
             temp_speed.popleft()
-
+            
+            # move 계산
             temp_move_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_move_sum += temp_move.popleft()
             FINAL_MOVE = int(temp_move_sum / (CATCH_FRAME - 1) * (152.5 / 680))
 
+            # ETA 계산
             temp_speed_sum = 0
             for i in range(CATCH_FRAME - 1):
                 temp_speed_sum += temp_speed.popleft()
@@ -129,6 +130,7 @@ while True:
                 + ETA_FIX
             )
 
+            # TANGENT 계산
             FINAL_ANGLE = (1220 - line_xy[1][1]) / (
                 line_xy[1][0] - FINAL_MOVE * (680 / 152.5)
             )
