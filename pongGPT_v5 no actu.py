@@ -25,31 +25,16 @@ print("Connection Ready...")
 client_actu = None
 client_arm = None
 
-# 두 명의 클라이언트를 받음
-for i in range(2):
-    client, address = server.accept()
-    print("Connected with {}".format(str(address)))
-    check_token = client.recv(1).decode()
-    if check_token == "a":
-        print("Actuator Connected!")
-        client_actu = client
-    elif check_token == "r":
-        print("Robot Arm Connected!")
-        client_arm = client
-    else:
-        print("Connection Error")
-        exit()
-
-
-# 엑추에이터 값 전달
-def actu_send(client_actu, fin_move, fin_eta):
-    try:
-        message = "{0},{1}".format(fin_move, fin_eta)
-        client_actu.send(message.encode(encoding="utf-8"))
-
-    except:
-        client_actu.close()
-
+# 클라이언트를 받음
+client, address = server.accept()
+print("Connected with {}".format(str(address)))
+check_token = client.recv(1).decode()
+if check_token == "r":
+    print("Robot Arm Connected!")
+    client_actu = client
+else:
+    print("Connection Error")
+    exit()
 
 # 로봇팔 값 전달
 def arm_send(client_arm, fin_eta, fin_angle):
@@ -200,17 +185,6 @@ while True:
                 target=line_activator, args=(FINAL_ETA / 1000,), daemon=True
             )
             lineact_tr.start()
-
-            # 엑추에이터 송신 쓰레드
-            actu_tr = threading.Thread(
-                target=actu_send,
-                args=(
-                    client_actu,
-                    FINAL_MOVE,
-                    FINAL_ETA,
-                ),
-            )
-            actu_tr.start()
 
             # 로봇팔 송신 쓰레드
             arm_tr = threading.Thread(
