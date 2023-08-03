@@ -383,7 +383,7 @@ int main()
 
 				do {
 					read_angle();
-				} while ((abs(dxl1_goal_position[index] - dxl1_present_position) > DXL1_MOVING_STATUS_THRESHOLD) || (abs(dxl2_goal_position[index] - dxl2_present_position) > DXL2_MOVING_STATUS_THRESHOLD)
+				} while ((abs(dxl1_goal_position[index] - dxl1_present_position) > DXL1_MOVING_STATUS_THRESHOLD) || (abs(dxl2_goal_position[index] - dxl2_present_position) > DXL2_MOVING_STATUS_THRESHOLD+20)
 					|| (abs(dxl3_goal_position[index] - dxl3_present_position) > DXL3_MOVING_STATUS_THRESHOLD) || (abs(dxl4_goal_position[index] - dxl4_present_position) > DXL4_MOVING_STATUS_THRESHOLD));
 
 			}
