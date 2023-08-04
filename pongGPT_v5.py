@@ -72,7 +72,7 @@ NET_LINE = 640  # 네트 라인
 CATCH_FRAME = 3
 MIN_GAP = 50
 MOVE_FIX = 0.1
-ETA_FIX = 120
+ETA_FIX = 20
 
 # 초기화 변수들
 line_on = False
@@ -191,7 +191,7 @@ while True:
             )
 
             # [[치트키]] 고정 
-            FINAL_ETA = 200
+            # FINAL_ETA = 290
 
             # TANGENT 계산
             FINAL_ANGLE = (1220 - line_xy[1][1]) / (
