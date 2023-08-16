@@ -70,7 +70,7 @@ CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 250  # 네트 라인
 
 CATCH_FRAME = 3 # 좌표 계산 프레임 수
-MIN_GAP = 10 # 최소 감지 속도 (px)
+MIN_GAP = 20 # 최소 감지 속도 (px)
 MOVE_FIX = 0.4 # 최종 좌표 미세 조정
 HIT_LINE = 750 - 100 # 타격 명령 감지 범위 (px)
 LINE_DEACTIVE_TIME = 0.8 # 감지 비활성화 시간 (sec)
@@ -200,7 +200,7 @@ while True:
             # 로봇팔 송신 쓰레드
             arm_tr = threading.Thread(
                 target=arm_send,
-                args=(client_arm, 1, 100),
+                args=(client_arm, 7, 100),
             )
             arm_tr.start()
             hit_on = True
