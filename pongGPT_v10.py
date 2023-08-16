@@ -67,7 +67,7 @@ VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
 WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
-NET_LINE = 90  # 네트 라인
+NET_LINE = 250  # 네트 라인
 
 CATCH_FRAME = 3 # 좌표 계산 프레임 수
 MIN_GAP = 10 # 최소 감지 속도 (px)
