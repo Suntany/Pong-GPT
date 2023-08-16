@@ -61,7 +61,7 @@ using namespace std;
 #define DXL3_ID                         14                   // Dynamixel#3 ID: 14
 #define DXL4_ID                         13                 // Dynamixel#4 ID: 13
 #define BAUDRATE                        57600
-#define DEVICENAME                      "COM4"      // Check which port is being used on your controller
+#define DEVICENAME                      "COM6"      // Check which port is being used on your controller
 															// ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
 
 #define TORQUE_ENABLE                   1                   // Value for enabling the torque
@@ -158,13 +158,13 @@ int dxl_comm_result = COMM_TX_FAIL;       // Communication result
 //
 //
 //front position and back position (all motors)
-int dxl_1_front_pos_deg = 218;  //id 2,3 (mx)  range 0~360
-int dxl_3_front_pos_deg = 140; //id 14         range 0~360
+int dxl_1_front_pos_deg = 174;  //id 2,3 (mx)  range 0~360
+int dxl_3_front_pos_deg = 194; //id 14         range 0~360
 int dxl_4_front_pos_deg = 190; //id  13       range 0~360
 
-int dxl_1_back_pos_deg = 246; //id 2, 3  (mx)   range 0~360
-int dxl_3_back_pos_deg = 108; //id 3          range 0~360
-int dxl_4_back_pos_deg = 185; //id  13        range 0~360
+int dxl_1_back_pos_deg = 227; //id 2, 3  (mx)   range 0~360
+int dxl_3_back_pos_deg = 159; //id 3          range 0~360
+int dxl_4_back_pos_deg = 158; //id  13        range 0~360
 
 //mapping 360 degree to 4096
 int dxl_1_front_pos = int(dxl_1_front_pos_deg * 11.38);
@@ -190,13 +190,13 @@ int dxl4_goal_position[2] = { dxl_4_back_pos, dxl_4_front_pos };     // Goal pos
 // 
 // 
 // all motors velocity
-int dxl1_front_vel = 218;      //range: 0~1023
-int dxl3_front_vel = 218;      //range: 0 ~ 32,767
-int dxl4_front_vel = 218;      //range: 0 ~ 32,767
+int dxl1_front_vel = 300;      //range: 0~1023
+int dxl3_front_vel = 10000;      //range: 0 ~ 32,767
+int dxl4_front_vel = 10000;      //range: 0 ~ 32,767
 
-int dxl1_back_vel = 218;      //range: 0~1023
-int dxl3_back_vel = 218;      //range: 0 ~ 32,767
-int dxl4_back_vel = 218;      //range: 0 ~ 32,767
+int dxl1_back_vel = 100;      //range: 0~1023
+int dxl3_back_vel = 50;      //range: 0 ~ 32,767
+int dxl4_back_vel = 50;      //range: 0 ~ 32,767
 
 int dxl1_vel[2] = { dxl1_back_vel, dxl1_front_vel };
 int dxl3_vel[2] = { dxl3_back_vel, dxl3_front_vel };
@@ -367,7 +367,7 @@ int main(void)
 		{
 			write_vel_front(); //velocity write
 			//Zzzzzzzzzzzzz
-			Sleep(recv_arr - 50);
+			//Sleep(recv_arr - 50);
 			//Zzzzzzzzzzzzz
 			HIT_NOW = 1; //hit now
 		}
