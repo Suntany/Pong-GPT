@@ -13,7 +13,7 @@ print("########### Pong GPT V10 ############")
 
 
 ##### 중요 환경 변수들 #####
-VIDEO_SELECTION = 1  # 0번부터 카메라 포트 찾아서 1씩 올려보기
+VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
 WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
@@ -137,8 +137,8 @@ while True:
         
         if center[1] > HIT_LINE and line_on == True and hit_on == False:
             hit_on = True
-            print("Hit!")
-
+            print("Hit! : {0}".format(center))
+            
     # rgb 트레킹 레드라인 코드
     pts.appendleft(center)
     for i in range(1, len(pts)):

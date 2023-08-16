@@ -25,22 +25,16 @@ print("Connection Ready...")
 client_actu = None
 client_arm = None
 
-# 두 명의 클라이언트를 받음
-for i in range(2):
-    if i == 1:
-        print("Next Connection Waiting...")
-    client, address = server.accept()
-    print("Connected with {}".format(str(address)))
-    check_token = client.recv(1).decode()
-    if check_token == "a":
-        print("Actuator Connected!")
-        client_actu = client
-    elif check_token == "r":
-        print("Robot Arm Connected!")
-        client_arm = client
-    else:
-        print("Connection Error")
-        exit()
+# 클라이언트를 받음
+client, address = server.accept()
+print("Connected with {}".format(str(address)))
+check_token = client.recv(1).decode()
+if check_token == "a":
+    print("Actuator Connected!")
+    client_actu = client
+else:
+    print("Connection Error")
+    exit()
 
 
 # 엑추에이터 값 전달
@@ -53,15 +47,6 @@ def actu_send(client_actu, fin_move, fin_eta):
         client_actu.close()
 
 
-# 로봇팔 값 전달
-def arm_send(client_arm, fin_eta, fin_angle):
-    try:
-        message = "{0},{1}".format(fin_eta, fin_angle)
-        client_arm.send(message.encode(encoding="utf-8"))
-    except:
-        client_arm.close()
-
-
 ##### 중요 환경 변수들 #####
 VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
 VIDEO_WIDTH = 1000  # 화면 가로 넓이
@@ -71,7 +56,7 @@ NET_LINE = 90  # 네트 라인
 
 CATCH_FRAME = 3 # 좌표 계산 프레임 수
 MIN_GAP = 10 # 최소 감지 속도 (px)
-MOVE_FIX = 0.1 # 최종 좌표 미세 조정
+MOVE_FIX = 0.4 # 최종 좌표 미세 조정
 HIT_LINE = 750 - 100 # 타격 명령 감지 범위 (px)
 LINE_DEACTIVE_TIME = 0.8 # 감지 비활성화 시간 (sec)
 ACTU_WAIT_TIME = 500 # 엑추에이터 이동 후 대기 시간 (ms)
@@ -168,16 +153,15 @@ while True:
                 temp_move_sum += temp_move.popleft()
             FINAL_MOVE = int(temp_move_sum / (CATCH_FRAME - 1) * (152.5 / 680))
             if FINAL_MOVE < 76:
-                FINAL_MOVE += int((76 - FINAL_MOVE) * MOVE_FIX)
+                FINAL_MOVE -= int((76 - FINAL_MOVE) * MOVE_FIX)
             else:
-                FINAL_MOVE -= int((FINAL_MOVE - 76) * MOVE_FIX)
+                FINAL_MOVE += int((FINAL_MOVE - 76) * MOVE_FIX)
 
             print(
                 "FINAL MOVE : {0}cm".format(
                     FINAL_MOVE
                 )
             )
-
 
             # 감지 대기 쓰레드
             lineact_tr = threading.Thread(
@@ -197,12 +181,6 @@ while True:
             actu_tr.start()
         
         if center[1] > HIT_LINE and line_on == True and hit_on == False:
-            # 로봇팔 송신 쓰레드
-            arm_tr = threading.Thread(
-                target=arm_send,
-                args=(client_arm, 0, 100),
-            )
-            arm_tr.start()
             hit_on = True
             print("Hit! : {0}".format(center))
 
