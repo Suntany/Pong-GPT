@@ -195,12 +195,13 @@ while True:
                 ),
             )
             actu_tr.start()
+
         
         if center[1] > HIT_LINE and line_on == True and hit_on == False:
             # 로봇팔 송신 쓰레드
             arm_tr = threading.Thread(
                 target=arm_send,
-                args=(client_arm, 7, 100),
+                args=(client_arm, 10, 100),
             )
             arm_tr.start()
             hit_on = True
