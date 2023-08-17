@@ -201,7 +201,8 @@ while True:
 
     # 네트선
     cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
-
+    cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
+    
     images = np.hstack((frame, depth_colormap))
     images = imutils.resize(images,width=500)
     

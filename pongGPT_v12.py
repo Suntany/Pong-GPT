@@ -90,6 +90,7 @@ while True:
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        print(center)
 
         # 탁구 알고리즘
         if line_on == False:
@@ -138,7 +139,6 @@ while True:
         if center[1] > HIT_LINE and line_on == True and hit_on == False:
             hit_on = True
             print("Hit! : {0}".format(center))
-            time.sleep(10)
             
     # rgb 트레킹 레드라인 코드
     pts.appendleft(center)

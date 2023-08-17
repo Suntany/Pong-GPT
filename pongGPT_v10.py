@@ -71,10 +71,11 @@ NET_LINE = 250  # 네트 라인
 
 CATCH_FRAME = 3 # 좌표 계산 프레임 수
 MIN_GAP = 20 # 최소 감지 속도 (px)
-MOVE_FIX = 0.4 # 최종 좌표 미세 조정
+MOVE_FIX = 0.15 # 최종 좌표 미세 조정
 HIT_LINE = 750 - 100 # 타격 명령 감지 범위 (px)
+HIT_DELAY = 10 # 감지 이후 타격까지 딜레이 (ms)
 LINE_DEACTIVE_TIME = 0.8 # 감지 비활성화 시간 (sec)
-ACTU_WAIT_TIME = 500 # 엑추에이터 이동 후 대기 시간 (ms)
+ACTU_WAIT_TIME = 300 # 엑추에이터 이동 후 대기 시간 (ms)
 
 # 초기화 변수들
 line_on = False
@@ -168,9 +169,9 @@ while True:
                 temp_move_sum += temp_move.popleft()
             FINAL_MOVE = int(temp_move_sum / (CATCH_FRAME - 1) * (152.5 / 680))
             if FINAL_MOVE < 76:
-                FINAL_MOVE -= int((76 - FINAL_MOVE) * MOVE_FIX)
+                FINAL_MOVE += int((76 - FINAL_MOVE) * MOVE_FIX)
             else:
-                FINAL_MOVE += int((FINAL_MOVE - 76) * MOVE_FIX)
+                FINAL_MOVE -= int((FINAL_MOVE - 76) * MOVE_FIX)
 
             print(
                 "FINAL MOVE : {0}cm".format(
@@ -198,10 +199,15 @@ while True:
 
         
         if center[1] > HIT_LINE and line_on == True and hit_on == False:
+            if center[1] > 700:
+                HIT_DELAY = 10
+            else:
+                HIT_DELAY = 50
+
             # 로봇팔 송신 쓰레드
             arm_tr = threading.Thread(
                 target=arm_send,
-                args=(client_arm, 10, 100),
+                args=(client_arm, HIT_DELAY, 100),
             )
             arm_tr.start()
             hit_on = True
