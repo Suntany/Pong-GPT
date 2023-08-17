@@ -19,12 +19,13 @@ WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 250  # 네트 라인
 
-CATCH_FRAME = 3 # 좌표 계산 프레임 수
-MIN_GAP = 10 # 최소 감지 속도 (px)
-MOVE_FIX = 0.4 # 최종 좌표 미세 조정
-HIT_LINE = 750 - 100 # 타격 명령 감지 범위 (px)
-LINE_DEACTIVE_TIME = 0.8 # 감지 비활성화 시간 (sec)
-ACTU_WAIT_TIME = 500 # 엑추에이터 이동 후 대기 시간 (ms)
+CATCH_FRAME = 3  # 좌표 계산 프레임 수
+MIN_GAP = 10  # 최소 감지 속도 (px)
+MOVE_FIX = 0.4  # 최종 좌표 미세 조정
+HIT_LINE = 750 - 100  # 타격 명령 감지 범위 (px)
+LINE_DEACTIVE_TIME = 0.8  # 감지 비활성화 시간 (sec)
+ACTU_WAIT_TIME = 500  # 엑추에이터 이동 후 대기 시간 (ms)
+
 
 # 초기화 변수들
 line_on = False
@@ -61,6 +62,7 @@ def line_activator(ETA):
     line_on = False
     print("Line Deactivated / Detecting UNLOCK")
 
+
 # 비디오 스트리밍 시작
 vs = VideoStream(src=VIDEO_SELECTION).start()
 time.sleep(2.0)
@@ -84,17 +86,38 @@ while True:
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     center = None
+    realcenter = None
     # 감지 했을 경우 (center 좌표 계산됨)
     if len(cnts) > 0:
         c = max(cnts, key=cv2.contourArea)
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-        print(center)
+        realcenter = [0, 0]
+
+        # 뎁스 알고리즘
+
+        # x좌표 수정
+        if center[1] < 500:
+            if center[0] < 340:
+                realcenter[0] = int(
+                    center[0] + ((340 - center[0]) / 4) * ((500 - center[1]) / 500)
+                )
+            elif center[0] > 340:
+                realcenter[0] = int(
+                    center[0] - ((center[0] - 340) / 4) * ((500 - center[1]) / 500)
+                )
+            else:
+                realcenter[0] = center[0]
+        else:
+            realcenter[0] = center[0]
+
+        # y좌표 수정
+        realcenter[1] = center[1]
 
         # 탁구 알고리즘
         if line_on == False:
-            line_xy.append(center)
+            line_xy.append(realcenter)
             if len(line_xy) == 2:
                 if line_xy[0][1] + MIN_GAP < line_xy[1][1]:
                     temp_move.append(
@@ -109,7 +132,6 @@ while True:
                 if line_xy[0][1] > line_xy[1][1]:
                     line_xy.clear()
 
-
         if len(temp_move) == CATCH_FRAME:
             temp_move.popleft()
 
@@ -123,25 +145,21 @@ while True:
             else:
                 FINAL_MOVE += int((FINAL_MOVE - 76) * MOVE_FIX)
 
-            print(
-                "FINAL MOVE : {0}cm".format(
-                    FINAL_MOVE
-                )
-            )
-
+            print("FINAL MOVE : {0}cm".format(FINAL_MOVE))
 
             # 감지 대기 쓰레드
             lineact_tr = threading.Thread(
                 target=line_activator, args=(LINE_DEACTIVE_TIME,), daemon=True
             )
             lineact_tr.start()
-        
-        if center[1] > HIT_LINE and line_on == True and hit_on == False:
+
+        if realcenter[1] > HIT_LINE and line_on == True and hit_on == False:
             hit_on = True
             print("Hit! : {0}".format(center))
-            
+            time.sleep(10)
+
     # rgb 트레킹 레드라인 코드
-    pts.appendleft(center)
+    pts.appendleft(realcenter)
     for i in range(1, len(pts)):
         if pts[i - 1] is None or pts[i] is None:
             continue
@@ -157,8 +175,6 @@ while True:
 
     # 화면 띄우기
     cv2.imshow("Frame", frame)
-
-    
 
     # q : 종료 r : 리셋
     key = cv2.waitKey(1) & 0xFF
