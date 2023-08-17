@@ -11,56 +11,6 @@ import socket
 
 print("########### Pong GPT V10 ############")
 
-# TCP/IP 소켓통신
-host = "127.0.0.1"
-port = 10000
-
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server.bind((host, port))
-server.listen()
-print("Connection Ready...")
-
-# clients
-client_actu = None
-client_arm = None
-
-# 두 명의 클라이언트를 받음
-for i in range(2):
-    if i == 1:
-        print("Next Connection Waiting...")
-    client, address = server.accept()
-    print("Connected with {}".format(str(address)))
-    check_token = client.recv(1).decode()
-    if check_token == "a":
-        print("Actuator Connected!")
-        client_actu = client
-    elif check_token == "r":
-        print("Robot Arm Connected!")
-        client_arm = client
-    else:
-        print("Connection Error")
-        exit()
-
-
-# 엑추에이터 값 전달
-def actu_send(client_actu, fin_move, fin_eta):
-    try:
-        message = "{0},{1}".format(fin_move, fin_eta)
-        client_actu.send(message.encode(encoding="utf-8"))
-
-    except:
-        client_actu.close()
-
-
-# 로봇팔 값 전달
-def arm_send(client_arm, fin_eta, fin_angle):
-    try:
-        message = "{0},{1}".format(fin_eta, fin_angle)
-        client_arm.send(message.encode(encoding="utf-8"))
-    except:
-        client_arm.close()
-
 
 ##### 중요 환경 변수들 #####
 VIDEO_SELECTION = 2  # 0번부터 카메라 포트 찾아서 1씩 올려보기
@@ -69,15 +19,15 @@ WIDTH_CUT = 160
 CENTER_LINE = 340  # 세로 센터 라인
 NET_LINE = 250  # 네트 라인
 
-CATCH_FRAME = 3 # 좌표 계산 프레임 수
-MIN_GAP = 20 # 최소 감지 속도 (px)
-MOVE_FIX = 0 # 최종 좌표 미세 조정
-HIT_LINE = 750 - 100 # 타격 명령 감지 범위 (px)
-HIT_DELAY = 10 # 감지 이후 타격까지 딜레이 (ms)
-LINE_DEACTIVE_TIME = 0.8 # 감지 비활성화 시간 (sec)
-ACTU_WAIT_TIME = 300 # 엑추에이터 이동 후 대기 시간 (ms)
+CATCH_FRAME = 3  # 좌표 계산 프레임 수
+MIN_GAP = 10  # 최소 감지 속도 (px)
+MOVE_FIX = 0  # 최종 좌표 미세 조정
+HIT_LINE = 750 - 100  # 타격 명령 감지 범위 (px)
+LINE_DEACTIVE_TIME = 0.8  # 감지 비활성화 시간 (sec)
+ACTU_WAIT_TIME = 500  # 엑추에이터 이동 후 대기 시간 (ms)
 
 DEPTH = 1.3
+
 
 # 초기화 변수들
 line_on = False
@@ -114,6 +64,7 @@ def line_activator(ETA):
     line_on = False
     print("Line Deactivated / Detecting UNLOCK")
 
+
 # 비디오 스트리밍 시작
 vs = VideoStream(src=VIDEO_SELECTION).start()
 time.sleep(2.0)
@@ -138,7 +89,6 @@ while True:
     cnts = imutils.grab_contours(cnts)
     center = None
     realcenter = None
-
     # 감지 했을 경우 (center 좌표 계산됨)
     if len(cnts) > 0:
         c = max(cnts, key=cv2.contourArea)
@@ -146,15 +96,16 @@ while True:
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
+
         # 뎁스 알고리즘
         realcenter = [0, 0]
         # x좌표 수정
         if center[1] < 500:
-            if center[0] < 330:
+            if center[0] < 340:
                 realcenter[0] = int(
                     center[0] + ((340 - center[0]) / 4) * ((500 - center[1]) / 500) * DEPTH
                 )
-            elif center[0] > 350:
+            elif center[0] > 340:
                 realcenter[0] = int(
                     center[0] - ((center[0] - 340) / 4) * ((500 - center[1]) / 500) * DEPTH
                 )
@@ -165,7 +116,6 @@ while True:
 
         # y좌표 수정
         realcenter[1] = center[1]
-
 
         # 탁구 알고리즘
         if line_on == False:
@@ -184,7 +134,6 @@ while True:
                 if line_xy[0][1] > line_xy[1][1]:
                     line_xy.clear()
 
-
         if len(temp_move) == CATCH_FRAME:
             temp_move.popleft()
 
@@ -194,16 +143,11 @@ while True:
                 temp_move_sum += temp_move.popleft()
             FINAL_MOVE = int(temp_move_sum / (CATCH_FRAME - 1) * (152.5 / 680))
             if FINAL_MOVE < 76:
-                FINAL_MOVE += int((76 - FINAL_MOVE) * MOVE_FIX)
+                FINAL_MOVE -= int((76 - FINAL_MOVE) * MOVE_FIX)
             else:
-                FINAL_MOVE -= int((FINAL_MOVE - 76) * MOVE_FIX)
+                FINAL_MOVE += int((FINAL_MOVE - 76) * MOVE_FIX)
 
-            print(
-                "FINAL MOVE : {0}cm".format(
-                    FINAL_MOVE
-                )
-            )
-
+            print("FINAL MOVE : {0}cm".format(FINAL_MOVE))
 
             # 감지 대기 쓰레드
             lineact_tr = threading.Thread(
@@ -211,32 +155,10 @@ while True:
             )
             lineact_tr.start()
 
-            # 엑추에이터 송신 쓰레드
-            actu_tr = threading.Thread(
-                target=actu_send,
-                args=(
-                    client_actu,
-                    FINAL_MOVE,
-                    ACTU_WAIT_TIME,
-                ),
-            )
-            actu_tr.start()
-
-        
         if realcenter[1] > HIT_LINE and line_on == True and hit_on == False:
-            if center[1] > 700:
-                HIT_DELAY = 10
-            else:
-                HIT_DELAY = 50
-
-            # 로봇팔 송신 쓰레드
-            arm_tr = threading.Thread(
-                target=arm_send,
-                args=(client_arm, HIT_DELAY, 100),
-            )
-            arm_tr.start()
             hit_on = True
             print("Hit! : {0}".format(realcenter))
+            time.sleep(10)
 
     # rgb 트레킹 레드라인 코드
     pts.appendleft(realcenter)

@@ -124,14 +124,18 @@ while True:
                 continue
             thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
             cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+        
+        dist = depth_frame.get_distance(center[0], center[1])
+        print(dist)
 
-        if (center[0] < CENTER_BOUND or center[0] > VIDEO_WIDTH - WIDTH_CUT - CENTER_BOUND): ## Near edge of the table. Additional value may subject to change.
-             dist = depth_frame.get_distance(center[0] + 10, center[1])
-        else: ## Near center of the table
-             dist = depth_frame.get_distance(center[0] + 4, center[1])
-        dist = round(dist, 2)
-        dist *= 100
-        realcenter = (center[0]* dist / 135, center[1] * dist / 135)
+
+        # if (center[0] < CENTER_BOUND or center[0] > VIDEO_WIDTH - WIDTH_CUT - CENTER_BOUND): ## Near edge of the table. Additional value may subject to change.
+        #      dist = depth_frame.get_distance(center[0] + 10, center[1])
+        # else: ## Near center of the table
+        #      dist = depth_frame.get_distance(center[0] + 4, center[1])
+        # dist = round(dist, 2)
+        # dist *= 100
+        # realcenter = (center[0]* dist / 135, center[1] * dist / 135)
 
         # 탁구 알고리즘
         if line_on == False:
@@ -201,8 +205,7 @@ while True:
 
     # 네트선
     cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
-    cv2.line(frame, (0, NET_LINE), (VIDEO_WIDTH, NET_LINE), (255, 255, 255), 2)
-    
+
     images = np.hstack((frame, depth_colormap))
     images = imutils.resize(images,width=500)
     
