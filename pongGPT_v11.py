@@ -124,9 +124,18 @@ while True:
                 continue
             thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
             cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+        # Appling depth
+        dist = 135
+        for i in range(center[0], center[0] + 40):
+            temp = depth_frame.get_distance(i, center[1])
+            if (temp < 130 and temp > 10):
+                dist = temp
+                break
+            if i >= VIDEO_WIDTH - WIDTH_CUT:
+                break
+        realcenter = (int (center[0] * dist / 135), int (center[1] * dist / 135))
         
-        dist = depth_frame.get_distance(center[0], center[1])
-        print(dist)
+
 
 
         # if (center[0] < CENTER_BOUND or center[0] > VIDEO_WIDTH - WIDTH_CUT - CENTER_BOUND): ## Near edge of the table. Additional value may subject to change.
@@ -139,7 +148,7 @@ while True:
 
         # 탁구 알고리즘
         if line_on == False:
-            line_xy.append(center)
+            line_xy.append(realcenter)
             time_xy.append(time.time())
             if len(line_xy) == 2:
                 if line_xy[0][1] + MIN_GAP < line_xy[1][1]:
