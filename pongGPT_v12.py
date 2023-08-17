@@ -150,11 +150,11 @@ while True:
         realcenter = [0, 0]
         # x좌표 수정
         if center[1] < 500:
-            if center[0] < 330:
+            if center[0] < 340:
                 realcenter[0] = int(
                     center[0] + ((340 - center[0]) / 4) * ((500 - center[1]) / 500) * DEPTH
                 )
-            elif center[0] > 350:
+            elif center[0] > 340:
                 realcenter[0] = int(
                     center[0] - ((center[0] - 340) / 4) * ((500 - center[1]) / 500) * DEPTH
                 )
@@ -225,9 +225,9 @@ while True:
         
         if realcenter[1] > HIT_LINE and line_on == True and hit_on == False:
             if center[1] > 700:
-                HIT_DELAY = 10
+                HIT_DELAY = 1
             else:
-                HIT_DELAY = 50
+                HIT_DELAY = 10
 
             # 로봇팔 송신 쓰레드
             arm_tr = threading.Thread(
